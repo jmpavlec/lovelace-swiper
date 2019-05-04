@@ -1,64 +1,86 @@
 document.addEventListener('touchstart', handleTouchStart, false);
-document.addEventListener('touchmove', handleTouchMove, false);
+document.addEventListener('touchmove', storeTouchMove, false);
+document.addEventListener('touchend', handleTouchEnd, false);
+
+//Config
+const swiperWrapAround = true;
+const swiperHorizontalSwipeIgnore = 20;
 
 var xDown = null;
+var xUp = null;
 var yDown = null;
+var yUp = null;
 
-tabs = document.querySelectorAll('home-assistant')[0].shadowRoot.querySelector('home-assistant-main').shadowRoot.querySelector('app-drawer-layout').querySelector('iron-pages').querySelector('partial-panel-resolver').shadowRoot.querySelector('#panel').querySelector('ha-panel-lovelace').shadowRoot.querySelector('hui-root').shadowRoot.querySelector('ha-app-layout').querySelector('paper-tabs').querySelectorAll('paper-tab')
+const paperTabs = document.querySelectorAll('home-assistant')[0].shadowRoot.querySelector('home-assistant-main').shadowRoot.querySelector('app-drawer-layout').querySelector('ha-panel-lovelace').shadowRoot.querySelector('hui-root').shadowRoot.querySelectorAll('paper-tab');
+const numberOfTabs = paperTabs.length;
+
+function getCurrentTabIndex() {
+    for (i = 0; i < numberOfTabs; i++) { 
+        if(paperTabs[i].classList.contains('iron-selected')) {
+            return i;
+        }
+    }
+    return 0;
+}
 
 function getTouches(evt) {
-  return evt.touches ||             // browser API
+  return evt.touches ||        // browser API
     evt.originalEvent.touches; // jQuery
 }
 
 function handleTouchStart(evt) {
   xDown = getTouches(evt)[0].clientX;
   yDown = getTouches(evt)[0].clientY;
-};
+  xUp = xDown;
+  yUp = yDown;
+}
 
-function handleTouchMove(evt) {
-  if (!xDown || !yDown) {
-    return;
-  }
+function storeTouchMove(evt) {
+  xUp = getTouches(evt)[0].clientX;
+  yUp = getTouches(evt)[0].clientY;
+}
 
-  var xUp = evt.touches[0].clientX;
-  var yUp = evt.touches[0].clientY;
-
-  var xDiff = xDown - xUp;
-  var yDiff = yDown - yUp;
-
-  if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
+function handleTouchEnd(evt) {
+    if(!xUp || !yUp) {
+        return;
+    }
+    evt.stopPropagation();
+    var xDiff = xDown - xUp;
+    var yDiff = yDown - yUp;
+    if (Math.abs(xDiff) < swiperHorizontalSwipeIgnore) {
+        //ignore minor swipe horizontal
+        return;
+    }
+    if (Math.abs(xDiff) > Math.abs(yDiff)) {
+    var currentIndex = getCurrentTabIndex();
+    var targetIndex = currentIndex;
     if (xDiff > 0) {
-      /* left swipe */
-      tabs.forEach(
-        function (currentValue, currentIndex, listObj) {
-          if (currentValue.classList.contains('iron-selected')) {
-            new_tab = currentIndex + 1
-            if (new_tab == tabs.length - 1) { new_tab = 0 }
-            window.location = '/lovelace/' + new_tab
-          }
-        }
-      );
+      /* right to left swipe */
+      if(currentIndex === numberOfTabs-1) {
+		if(swiperWrapAround) {
+		  targetIndex = 0;
+		} else {
+		  return;
+		}
+      } else {
+        targetIndex = currentIndex+1;
+      }
     } else {
-      /* right swipe */
-      tabs.forEach(
-        function (currentValue, currentIndex, listObj) {
-          if (currentValue.classList.contains('iron-selected')) {
-            new_tab = currentIndex - 1
-            if (new_tab == -1){ new_tab = tabs.length - 1 }
-            window.location = '/lovelace/' + new_tab
-          }
-        }
-      );
+      /* left to right swipe */
+      if(currentIndex === 0) {
+		if(swiperWrapAround) {
+		  targetIndex = numberOfTabs-1;
+		} else {
+		  return;
+		}
+      } else {
+        targetIndex = currentIndex-1;
+      }
     }
-  } else {
-    if (yDiff > 0) {
-      /* up swipe */
-    } else {
-      /* down swipe */
-    }
+    paperTabs[targetIndex].dispatchEvent(new MouseEvent('click', {shiftKey: true}));
   }
-  /* reset values */
   xDown = null;
+  xUp = null;
   yDown = null;
-};
+  yUp = null;
+}
