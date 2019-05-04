@@ -19,21 +19,8 @@ function getCurrentTabIndex() {
     if(paperTabs[i].classList.contains('iron-selected')) {
       return i;
     }
-  }document.addEventListener('touchstart', handleTouchStart, false);
-document.addEventListener('touchmove', storeTouchMove, false);
-document.addEventListener('touchend', handleTouchEnd, false);
-
-//Config
-const swiperWrapAround = true;
-const swiperHorizontalSwipeIgnore = 20;
-
-var xDown = null;
-var xUp = null;
-var yDown = null;
-var yUp = null;
-
-const paperTabs = document.querySelectorAll('home-assistant')[0].shadowRoot.querySelector('home-assistant-main').shadowRoot.querySelector('app-drawer-layout').querySelector('ha-panel-lovelace').shadowRoot.querySelector('hui-root').shadowRoot.querySelectorAll('paper-tab');
-const numberOfTabs = paperTabs.length;
+  }
+}
 
 function getCurrentTabIndex() {
   for (i = 0; i < numberOfTabs; i++) { 
